@@ -84,10 +84,31 @@ const postLogin = async (req: express.Request, res: express.Response) => {
       errors: 'Invalid username or password',
     });
   }
-  const token = jwt.sign({ user }, process.env.JWT_SECRET as string, {
+  // create JWTs
+
+  const accessToken = jwt.sign({ user }, process.env.JWT_SECRET as string, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
-  res.cookie('jwt', token, {
+
+  const refreshToken = jwt.sign(
+    { username: user.username },
+    process.env.JWT_REFRESH_SECRET as string,
+    {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+    },
+  );
+
+  // store refresh token in database
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  // send JWTs
+  res.cookie('jwt', accessToken, {
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+    httpOnly: true, // cookie cannot be accessed or modified in any way by the browser
+  });
+
+  res.cookie('refreshToken', refreshToken, {
     expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
     httpOnly: true, // cookie cannot be accessed or modified in any way by the browser
   });

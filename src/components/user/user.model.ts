@@ -1,5 +1,21 @@
 import mongoose from 'mongoose';
 
+import { UserType } from './user.type';
+
+export interface IUser extends UserType {
+  checkRefreshTokenValidity: (
+    refreshToken: string,
+    username: string,
+  ) => Promise<boolean>;
+}
+
+export interface IUserModel extends mongoose.Model<IUser> {
+  checkRefreshTokenValidity: (
+    refreshToken: string,
+    username: string,
+  ) => Promise<boolean>;
+}
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -25,12 +41,29 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    refreshToken: {
+      type: String,
+      default: null,
+    },
   },
   {
     versionKey: false,
   },
 );
 
-const User = mongoose.model('User', userSchema);
+userSchema.statics.checkRefreshTokenValidity = async function (
+  refreshToken: string,
+  username: string,
+) {
+  const user = await this.findOne({ refreshToken });
+  if (!user) {
+    return false;
+  }
+  if (user.username !== username) {
+    return false;
+  }
+  return true;
+};
+const User: IUserModel = mongoose.model<IUser, IUserModel>('User', userSchema);
 
 export default User;

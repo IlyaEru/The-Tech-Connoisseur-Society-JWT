@@ -8,14 +8,9 @@ import dotenv from 'dotenv';
 
 import cookieParser from 'cookie-parser';
 
-import bcrypt from 'bcryptjs';
-
-import jwt from 'jsonwebtoken';
-
 import routes from './routes';
 
-import User from './components/user/user.model';
-import { UserType } from './components/user/user.type';
+import authMiddleware from './middlewares/authMiddleware';
 
 const app = express();
 
@@ -53,44 +48,9 @@ app.use(express.static('public'));
 
 const port = process.env.PORT || 3000;
 
-// app.use((req, res, next) => {
-//   res.locals.isLoggedIn = res.locals.isLoggedIn;
-//   res.locals.user = res.locals.user;
-//   res.locals.isUserAdmin = res.locals.user?.admin;
-//   res.locals.isUserMember = res.locals.user?.member;
-//   res.locals.path = req.path;
-//   next();
-// });
+// Jwt authentication
 
-interface JwtPayload {
-  user: UserType;
-}
-app.use((req, res, next) => {
-  res.locals.path = req.path;
-  res.locals.isLoggedIn = false;
-  res.locals.errors = [];
-  res.locals.user = null;
-  res.locals.isUserAdmin = false;
-  res.locals.isUserMember = false;
-
-  const token = req.cookies.jwt;
-
-  if (token) {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string,
-    ) as JwtPayload;
-
-    if (decoded) {
-      res.locals.user = decoded.user;
-      res.locals.isLoggedIn = true;
-      res.locals.isUserAdmin = decoded.user.admin;
-      res.locals.isUserMember = decoded.user.member;
-    }
-  }
-
-  next();
-});
+app.use(authMiddleware);
 
 app.use(routes);
 

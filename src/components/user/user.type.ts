@@ -6,6 +6,7 @@ export interface UserType {
   password: string;
   member: boolean;
   admin: boolean;
+  refreshToken?: string;
 }
 
 declare global {
